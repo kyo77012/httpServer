@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>File Upload</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        
+<script>
+function loadXMLDoc() {
+var xmlhttp;
+  if (window.XMLHttpRequest) {
+    // code for IE7+, Firefox, Chrome, Opera, Safari
+    xmlhttp=new XMLHttpRequest();
+  } // if
+  else {
+    // code for IE6, IE5
+    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  } // else
+  
+
+  xmlhttp.onreadystatechange = function() {
+    if ( xmlhttp.readyState == 2 ) 
+      document.getElementById("myDiv").innerHTML += xmlhttp.readyState + " " + xmlhttp.status + " ";
+  } // function()
+  
+  xmlhttp.open("PUT","aaa",true);
+  xmlhttp.send();
+} // loadXMLDoc()
+
+function uploadData() {
+  var formData = new FormData();
+  formData.append("myFile", document.getElementById("myFileField").files[0]);
+  
+  var xhr = new XMLHttpRequest();
+  var upload_dst = document.getElementById( "upload_dst" ).value;
+  xhr.open("PUT", upload_dst, true );
+  xhr.send( formData );
+} // function uploadData()
+
+</script>
+    </head>
+    <body>
+        <form method="GET" action="aaa" >
+            File:
+            <input type="file" name="myFile" id="myFileField" />
+            Destination:
+            <input id="upload_dst"  type="text" value="/dir" name="destination"/>
+            <input type="button" value="Upload" name="upload" id="upload" onclick="uploadData()" />
+        </form>
+        
+        
+        <form method="POST" action="aaa" >
+            account:
+            <input type="text" name="userNm" />
+            password:
+            <input type="text" name="userPwd" />
+            <input type="submit" value="login" name="action" />
+        </form>
+<script type="text/javascript" language="javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" language="javascript">
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+  alert("support");
+}
+else {
+  alert('not support.');
+}
+</script>
+<h2>AJAX</h2>
+<button type="button" onclick="loadXMLDoc()">Request data</button>
+<div id="myDiv"></div>
+    </body>
+</html>

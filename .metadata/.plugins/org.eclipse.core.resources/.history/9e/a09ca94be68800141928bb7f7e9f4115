@@ -1,0 +1,246 @@
+package httpServer;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Scanner;
+
+
+interface HTTP_Status_Code {
+	// 2xx Success
+	public static final int OK = 200;
+	
+	// 3xx Redirection
+	public static final int Moved_Permanently = 301;
+	
+	// 4xx Client Error
+	public static final int Bad_Request = 400;
+	public static final int Not_Found = 404;
+	public static final int Method_Not_Allowed = 405;
+	
+	// 5xx Server Error
+	public static final int HTTP_Version_Not_Supported = 505;
+} // interface HTTP_Status_Code
+
+enum HTTP_Request_Methods {
+	 GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH;
+} // HTTP_Request
+
+class Config {
+	public static int port = 80;
+	public static String docRoot = "/www/html";
+	public static String indexFile = "index.html";
+} // class Config
+
+
+public class HttpServer {
+	private static ServerSocket server;
+	private static Socket newClient;
+	
+	private static final int port = Config.port;
+	private static final String docRoot = Config.docRoot;
+	private static final String indexFile = Config.indexFile;
+	
+	public static void main(String[] args) {
+		try {
+            System.out.println( "文件根目錄: " + docRoot +
+                                "\n索引文件: " + indexFile + 
+                                "\n連接埠: " + port ); 
+			while ( true ) {
+			  ServerSocket server = new ServerSocket( port );
+			  newClient = server.accept();
+			  new Thread( new HandleRequest( newClient ) );
+			  System.out.println( "客戶端連線: " + newClient.getInetAddress() );
+			} // while
+		} // try
+		catch ( Exception e ) {
+			System.out.println( e.getMessage() );
+			e.printStackTrace();
+		} // catch
+	} // main()
+} // class HttpServer
+
+
+class HandleRequest implements Runnable {
+	private final Socket client;
+	private Scanner input;
+	private PrintStream output;
+	
+	private static final String docRoot = Config.docRoot;
+	private static final String indexFile = Config.indexFile;
+	
+	private String string_requestMethod;
+	private String requestFile;
+	private String httpVersion;
+	private HTTP_Request_Methods request_Method;
+	
+	private String cookie = "";
+	private int content_length = 0;
+	private String data = "";
+	
+	public HandleRequest( final Socket newClient ) {
+		this.client = newClient;
+		try {
+			this.input = new Scanner( newClient.getInputStream() );
+			this.output = new PrintStream( newClient.getOutputStream() );
+		} // try
+		catch ( IOException e ) {
+			System.out.println( e.getMessage() );
+			e.printStackTrace();
+		} // catch
+	} // HandleReuqest()
+	
+	@Override
+	public void run() {
+		ReadInput();
+		ParseInput();
+		Reply();
+	} // run()
+	
+	void ReadInput() {
+	   String[] token;
+	   token = input.nextLine().split( "[ \t]" );
+	   string_requestMethod = token[0];
+	   requestFile = token[1];
+	   httpVersion = token[2];
+
+	   while ( input.hasNext() ) {
+		   token = input.nextLine().split( ": ;\t" );
+		   if ( token[0].equals( "" ) ) break;
+		   else if ( token[0].equals( "Cookie" ) ) {
+			   for ( int i = 1 ; i < token.length ; i++ ) {
+				   if ( token[i].equals( "" ) ) continue;
+				   else cookie += token[i] + "\n";
+			   } // for
+		   } // else if
+		   else if ( token[0].equals( "Content-Length" ) ) {
+			   for ( int i = 0 ; i < token.length ; i++ ) {
+				   if ( token[i].equals( "" ) ) continue;
+				   else {
+					   content_length = Integer.parseInt( token[i] );
+					   break;
+				   } // else
+			   } // for
+		   } // else if
+	   } // while
+	   
+	   if ( content_length > 0 ) {
+		   for ( int i = 0 ; i < content_length ; i++ ) {
+			   data += input.nextByte();
+		   } // for
+	   } // if
+	} // ReadInput()
+	
+	void ParseInput() {
+		try {
+			CheckRequest();
+			CheckHttpVersion();
+		} // try
+		catch ( Throwable e ) {
+			System.out.println( e.getMessage() );
+			e.printStackTrace();
+		} // catch()
+	} // ParseInput()
+	
+	void CheckRequest() throws Throwable {
+		if ( string_requestMethod.equals( "GET" ) )
+			request_Method = HTTP_Request_Methods.GET;
+		else if ( string_requestMethod.equals( "HEAD" ) )
+			request_Method = HTTP_Request_Methods.HEAD;
+		else if ( string_requestMethod.equals( "POST" ) )
+			request_Method = HTTP_Request_Methods.POST;
+        else if ( string_requestMethod.equals( "PUT" ) )
+        	request_Method = HTTP_Request_Methods.PUT;
+        else if ( string_requestMethod.equals( "DELETE" ) )
+        	request_Method = HTTP_Request_Methods.DELETE;
+        else if ( string_requestMethod.equals( "TRACE" ) )
+        	request_Method = HTTP_Request_Methods.TRACE;
+        else if ( string_requestMethod.equals( "OPTIONS" ) )
+        	request_Method = HTTP_Request_Methods.OPTIONS;
+        else if ( string_requestMethod.equals( "CONNECT" ) )
+        	request_Method = HTTP_Request_Methods.CONNECT;
+        else if ( string_requestMethod.equals( "PATCH" ) )
+        	request_Method = HTTP_Request_Methods.PATCH;
+        else throw new Bad_Request_Exception();
+	} // CheckRequest()
+	
+	void CheckHttpVersion() throws Throwable {
+		if ( httpVersion.equals( "HTTP/1.1" ) ) {
+			if ( request_Method == HTTP_Request_Methods.TRACE ||
+				 request_Method == HTTP_Request_Methods.OPTIONS ||
+				 request_Method == HTTP_Request_Methods.CONNECT ||
+			     request_Method == HTTP_Request_Methods.PATCH )
+			  throw new Method_Not_Allowed_Exception();
+		} // if
+		else if ( httpVersion.equals( "HTTP/1.0" ) ) {
+			if ( request_Method == HTTP_Request_Methods.PUT ||
+				 request_Method == HTTP_Request_Methods.DELETE ||
+				 request_Method == HTTP_Request_Methods.TRACE ||
+			     request_Method == HTTP_Request_Methods.OPTIONS ||
+				 request_Method == HTTP_Request_Methods.CONNECT ||
+				 request_Method == HTTP_Request_Methods.PATCH )
+			  throw new Bad_Request_Exception();
+		} // else if
+		else throw new HTTP_Version_Not_Supported_Exception();
+	} // CheckHttpVersion()
+	
+	void Reply() {
+		if ( request_Method == HTTP_Request_Methods.GET ) DoGET();
+		else if ( request_Method == HTTP_Request_Methods.HEAD ) DoHEAD();
+		else if ( request_Method == HTTP_Request_Methods.POST ) DoPOST();
+        else if ( request_Method == HTTP_Request_Methods.PUT ) DoPUT();
+        else if ( request_Method == HTTP_Request_Methods.DELETE ) DoDELETE();
+	} // Reply()
+	
+	void DoGET() {
+		
+	} // DoGET()
+	
+	void DoHEAD() {
+		
+	} // DoHEAD()
+	
+	void DoPOST() {
+		
+	} // DoPOST()
+	
+	void DoPUT() {
+		
+	} // DoPUT()
+	
+	void DoDELETE() {
+		
+	} // DoDELETE()
+} // class HandleRequest
+
+
+class Client_Error_Exception extends Exception {
+	public Client_Error_Exception( String msg ) {
+		super( msg );
+	} // Client_Error_Exception()
+} // class Client_Error_Exception
+
+class Bad_Request_Exception extends Client_Error_Exception implements HTTP_Status_Code {
+	public Bad_Request_Exception() {
+		super( HTTP_Status_Code.Bad_Request + " Bad Request" );
+	} // Bad_Request_Exception()
+} // class Bad_Request_Exception
+
+class Method_Not_Allowed_Exception extends Client_Error_Exception implements HTTP_Status_Code {
+	public Method_Not_Allowed_Exception() {
+		super( HTTP_Status_Code.Method_Not_Allowed + "  Method Not Allowed" );
+	} // Method_Not_Allowed_Exception()
+} // class Method_Not_Allowed_Exception
+
+class Server_Error_Exception extends Exception {
+	public Server_Error_Exception( String msg ) {
+		super( msg );
+	} // Server_Error_Exception()
+} // class Server_Error_Exception
+
+class HTTP_Version_Not_Supported_Exception extends Server_Error_Exception implements HTTP_Status_Code {
+	public HTTP_Version_Not_Supported_Exception() {
+		super( HTTP_Status_Code.HTTP_Version_Not_Supported + " HTTP Version Not Supported" );
+	} // HTTP_Version_Not_Supported()
+} // class HTTP_Version_Not_Supported

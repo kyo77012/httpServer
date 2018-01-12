@@ -1,0 +1,21 @@
+1419158421531	Move file
+1419158430326	Delete element
+1419159277124	Move file
+1419159279964	Delete element
+1419167164000	Rename type 'CheckFile'
+1419167579170	Rename local variable 'root'
+1419167806909	Rename local variable 'fullPath'
+1419167845231	Rename local variable 'files'
+1419170352540	Rename type 'GetAllFiles'
+1419170487661	Rename method 'GetFiles'
+1419175429700	Rename local variable 'inCurFile'
+1419176782501	Rename local variable 'curDir'
+1419176791190	Rename local variable 'curFile'
+1419177116806	Rename local variable 'nextDir'
+1419177125448	Rename local variable 'curDir'
+1419177149623	Rename local variable 'rootDir'
+1419178728328	Rename field 'requestFile'
+1419180883244	Rename local variable 'requestFile'
+1419182988129	Rename method 'CheckReadInput'
+1419184319478	Rename local variable 'temprequestFileName'
+1419241188927	Rename field 'gmtTime'

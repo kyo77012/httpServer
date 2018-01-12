@@ -1,0 +1,20 @@
+INDEX VERSION 1.130+D:\課程相關\計算機網路\ComputerNetworking\.metadata\.plugins\org.eclipse.jdt.core
+3887861183.index
+4271705704.index
+3681743711.index
+584591307.index
+1102846136.index
+2553766289.index
+1580013168.index
+1606117680.index
+957297929.index
+517093290.index
+3778601464.index
+1386616230.index
+1043098581.index
+2401290100.index
+2089866313.index
+2370855903.index
+2278286196.index
+3339895096.index
+1074673958.index
